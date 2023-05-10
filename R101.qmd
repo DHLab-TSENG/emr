@@ -15,9 +15,19 @@ title-slide-attributes:
   data-background-size: 15%
   data-background-position: 2% 2%
 ---
+## Before we start....
 
+<https://github.com/DHLab-TSENG/emr>
 
+::: columns
+::: {.column width="50%"}
+![](figure/qrcode_github.com.png){width="400"}
+:::
 
+::: {.column width="50%"}
+![](figure/download.png){width="400"}
+:::
+:::
 # From pre-tutorial survey
 
 ## About programming, R, EMR
@@ -27,6 +37,7 @@ title-slide-attributes:
 -   Familiar with EMR analysis. Not familiar vs. somewhat familiar 50% vs. 50%
 
 ## About expectations
+
 -   Basic concept in clinical data analysis
 -   Data analysis
 
@@ -92,16 +103,18 @@ remotes::install_github("DHLab-TSENG/lab")
 -   Procedure
 
 ## Diagnosis (1/2)
+
 ```{r style="font-size: 0.6em"}
 sampleNewborn<-readRDS("data/sampleNewborn.rds")
 knitr::kable(head(sampleNewborn,10))
 ```
 
 ## Diagnosis (2/2)
+
 -   Patient ID
 -   Date of record
 -   Diagnosis code: ICD
--   Diagnosis sequence: 1~? 
+-   Diagnosis sequence: 1\~?
     -   The order of diagnosis for one encounter
     -   1 usually means the principle diagnosis
 
@@ -113,6 +126,7 @@ knitr::kable(head(PDALab,10))
 ```
 
 ## Laborayory data (2/2)
+
 -   Patient ID
 -   Date of test
 -   Laboratory test code: local code or LOINC
@@ -125,3 +139,5 @@ Other information:
 
 -   Image
 -   Signal
+
+
