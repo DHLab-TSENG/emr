@@ -1,0 +1,127 @@
+---
+title: "Before analyzing EMR"
+subtitle: "quick EMR and R 101"
+author: "Yi-Ju Tseng, PhD @ DHLab NYCU"
+editor: visual
+date: 2023-05-12
+format:
+  revealjs:
+    slide-number: true
+    logo: figure/emr.png
+    footer: <DHLab @ NYCU>
+slide-number: true
+title-slide-attributes: 
+  data-background-image: figure/emr.png
+  data-background-size: 15%
+  data-background-position: 2% 2%
+---
+
+
+
+# From pre-tutorial survey
+
+## About programming, R, EMR
+
+-   Confident vs. not confident 50% vs. 50%
+-   Have used R or not 50% vs. 50%
+-   Familiar with EMR analysis. Not familiar vs. somewhat familiar 50% vs. 50%
+
+## About expectations
+-   Basic concept in clinical data analysis
+-   Data analysis
+
+# R
+
+## R vs. RStudio
+
+R: Backbone (Engine)
+
+![](https://www.teslarati.com/wp-content/uploads/2018/07/model-3-drivetrain-1.jpg)
+
+[Source](https://www.teslarati.com/tesla-patent-more-efficient-electric-motors/)
+
+## R vs. RStudio
+
+RStudio: IDE (Dashboard)
+
+![](https://i.pinimg.com/originals/b9/73/15/b97315751352729f99b02c87f454012b.jpg)
+
+[Source](https://www.theverge.com/2015/3/19/8260295/tesla-user-interface-redesign-concept)
+
+## Check points
+
+-   R [download](https://cloud.r-project.org/)
+-   RStudio [download](https://posit.co/download/rstudio-desktop/#download)
+
+## R and R Packages
+
+R: Backbone (iPhone)
+
+![](https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/iphone-xr-white-select-201809?wid=940&hei=1112&fmt=png-alpha&qlt=80&.v=1551226036668)
+
+## R and R Packages
+
+R Packages: Adds-on (APP)
+
+![](https://3c.yipee.cc/wp-content/uploads/2019/06/a7ffbaa3df50d7cafe6801a8a8d7a3bf-620x320.jpg)
+
+[Source](https://www.apple.com/)
+
+## Check points
+
+-   `dxpr`, `lab` and `tidyverse` packages
+
+```{r}
+#| eval: false
+#| echo: true
+install.packages("tidyverse")
+install.packages("remotes")
+remotes::install_github("DHLab-TSENG/dxpr")
+remotes::install_github("DHLab-TSENG/lab")
+```
+
+# EMR
+
+## Information in EMR
+
+4 most important items:
+
+-   Diagnosis: [dxpr](https://peerj.com/articles/cs-520/)
+-   Laboratory data: [lab](https://ssrn.com/abstract=4246800)
+-   Medication
+-   Procedure
+
+## Diagnosis (1/2)
+```{r style="font-size: 0.6em"}
+sampleNewborn<-readRDS("data/sampleNewborn.rds")
+knitr::kable(head(sampleNewborn,10))
+```
+
+## Diagnosis (2/2)
+-   Patient ID
+-   Date of record
+-   Diagnosis code: ICD
+-   Diagnosis sequence: 1~? 
+    -   The order of diagnosis for one encounter
+    -   1 usually means the principle diagnosis
+
+## Laborayory data (1/2)
+
+```{r style="font-size: 0.6em"}
+PDALab<-readRDS("data/PDALab.rds")
+knitr::kable(head(PDALab,10))
+```
+
+## Laborayory data (2/2)
+-   Patient ID
+-   Date of test
+-   Laboratory test code: local code or LOINC
+-   Test results
+-   Unit
+
+## Information in EMR
+
+Other information:
+
+-   Image
+-   Signal

@@ -1,0 +1,538 @@
+---
+title: "dxpr"
+subtitle: "an R package for generating analysis-ready data from electronic health records - diagnoses and procedures"
+author: "Yi-Ju Tseng, PhD @ DHLab NYCU"
+editor: visual
+date: 2023-05-12
+format:
+  revealjs:
+    slide-number: true
+    logo: https://user-images.githubusercontent.com/8377506/176842906-997ef98f-ee28-42bc-a542-919dc80c6684.png
+    footer: <DHLab @ NYCU>
+slide-number: true
+title-slide-attributes: 
+  data-background-image: https://user-images.githubusercontent.com/8377506/176842906-997ef98f-ee28-42bc-a542-919dc80c6684.png
+  data-background-size: 15%
+  data-background-position: 2% 2%
+---
+
+```{r, include=FALSE}
+options(tibble.print_min = 4L, tibble.print_max = 4L)
+```
+
+## Features
+
+-   **Data integration**
+    -   Transform codes into uniform format and group code into categories.
+-   **Data Wrangling**
+    -   Generate statistical information and transform data into analysis-ready format.
+-   **Visualization**
+    -   Provide overviews for the diagnosis data.
+
+## Overview
+
+<img src="https://raw.githubusercontent.com/DHLab-TSENG/dxpr/master/image/overview.png" style="display:block; margin:auto; width:100%;"/>
+
+## Installation
+
+```{r}
+#| eval: false
+#| echo: true
+install.packages("remotes")
+remotes::install_github("DHLab-TSENG/dxpr")
+```
+
+## Load packages
+
+```{r}
+#| echo: true
+library(dxpr)
+library(tidyverse)
+```
+
+# Learn from a real analysis case!
+
+## Research question
+
+-   Newborns who were diagnosed with patent ductus arteriosus (PDA) vs. without PDA
+
+    -   Define **PDA** and **non-PDA** groups
+
+-   The differences of comorbidity between these two groups
+
+    -   Define comorbidity
+
+# Data - MIMIC III
+
+## Example data - from MIMIC III (1/2)
+
+-   A large, **freely-available** database
+-   Deidentified health-related data, over **40,000** patients
+-   ICU of the Beth Israel Deaconess Medical Center, 2001-2012.
+-   You must completing **CITI Data or Specimens Only Research** training
+-   [MIMIC III](https://physionet.org/content/mimiciii/1.4/)
+
+## Example data - from MIMIC III (2/2)
+
+-   Demographics
+-   Vital sign measurements made at the bedside
+    -   \~1 data point/hr
+-   Laboratory test results
+-   Procedures
+-   Medications
+-   Caregiver notes, imaging reports
+-   Mortality (including post-hospital discharge)
+
+## Example data - newborn's data
+
+-   **Admission**: ADMISSIONS
+    -   Unique hospitalization for each patient in the database `HADM_ID`
+    -   Use to get a `SUBJECT_ID` list of **newborn**
+-   **Diagnosis**: DIAGNOSES_ICD
+    -   Coded using the **I**nternational Statistical **C**lassification of **D**iseases and Related Health Problems ('ICD') system
+    -   Use to analyze comorbidity
+
+## Take a look of the example data
+
+From **DIAGNOSES_ICD** data, only for newborn
+
+```{r}
+#| echo: true
+sampleNewborn<-readRDS("data/sampleNewborn.rds")
+glimpse(sampleNewborn, width = 70)
+```
+
+[Coding book](https://mimic.mit.edu/docs/iii/tables/)
+
+```{r}
+#| echo: true
+sampleNewborn %>%
+  summarise(Subject=n_distinct(SUBJECT_ID),
+            Admission=n_distinct(HADM_ID),
+            TotalDiagnoses=n())
+```
+
+## Take a look of the data from 1 patient
+
+```{r}
+#| echo: true
+sampleNewborn %>%
+  filter(SUBJECT_ID == 4026)
+```
+
+# Step 1. Select Target Cases
+
+## Define your target
+
+-   Research target: newborn who diagnosed with *Patent Ductus Arteriosus* (PDA)
+-   The ICD-9 code for PDA is 747.0
+
+![](figure/747.png)
+
+[source](http://www.icd9data.com/2015/Volume1/740-759/747/default.htm)
+
+## Select cases from your data (1/2)
+
+-   Use `selectCases()` from `dxpr`
+
+-   provide the names of `patient ID`, `ICD`, and `date`
+
+-   `icd10usingDate` = "9999/01/01" **The date start using ICD10**
+
+-   `groupDataType` = ICD **Use ICD to select cases**
+
+-   `caseCondition` = "\^7470" **ICD codes for cases**
+
+-   `caseCount` = 1 **Most of the time we need more diagnoses**
+
+-   `CaseName` = "PDA" **Name for the case group**
+
+## Select cases from your data (2/2)
+
+```{r}
+#| echo: true
+Case <- selectCases(dxDataFile = sampleNewborn,
+                    idColName = SUBJECT_ID,
+                    icdColName = ICD9_CODE,
+                    dateColName = ADMITTIME,
+                    icd10usingDate = "9999/01/01",
+                    groupDataType = ICD,
+                    caseCondition = "^7470",
+                    caseCount = 1,
+                    caseName = "PDA")
+```
+
+## Warnings from ICD codes analysis
+
+-   **Wrong ICD format**: the ICD has wrong format
+-   **Wrong ICD version**: means the ICD classify to wrong ICD version
+-   Examples: total 37 ICD codes (the number of occurrences is in brackets) c("7793 (1024)", "V721 (368)", "7708 (221)", "7473 (106)", "7775 (60)", "7718 (47)", "7671 (28)", "7701 (23)", "7806 (12)", "7798 (9)")
+
+## Warnings from ICD - why?
+
+-   1024 diagnoses being coded as 7793 (779.3)
+-   But 779.3 might not be the one used for grouping
+-   Solution available later
+
+![](figure/7793.png)
+
+## Select target cases from your data
+
+```{r}
+#| echo: true
+Case
+```
+
+# Step 2. Identify Comorbidity by Using Diagnoses
+
+## Identify comorbidity
+
+-   Analyze diagnoses with ICD directly is not reasonable
+    -   Number of code, ICD-9: *13,000*
+    -   Number of code, ICD-10: *68,000*
+-   Grouping diagnoses into clinically meaningful category is needed
+    -   Charlson (n=17)
+    -   AHRQ (n=30)
+    -   Elixhauser (n=40) [paper](http://dx.doi.org/10.1097/MLR.0b013e31819432e5)
+    -   Clinical Classifications Software (CCS) (single level, n=283)
+
+## Identify comorbidity - Elixhauser
+
+::: {style="font-size: 0.5em"}
+::: columns
+::: {.column width="33%"}
+-   Congestive heart failure
+-   Cardiac arrythmia
+-   Valvular disease
+-   Pulmonary circulation disorders
+-   Peripheral vascular disorders
+-   Hypertension
+-   Paralysis
+-   Neurodegenerative disorder
+-   Chronic Pulmonary disease
+:::
+
+::: {.column width="33%"}
+-   Uncomplicated diabetes
+-   Complicated diabetes
+-   Hypothyrodism
+-   Renal failure
+-   Liver disease
+-   Peptic ulcer disease
+-   AIDS/HIV
+-   Lymphoma
+-   Metastatic cancer
+-   Solid tumor
+:::
+
+::: {.column width="33%"}
+-   Rheumatoid arthritis diseases
+-   Coagulopath
+-   Obesity
+-   Weight loss
+-   Fluid and electrolyte disorders
+-   Blood loss anemia
+-   Deficiency anemia
+-   Alcohol abuse
+-   Drug abuse
+-   Psychoses
+-   Depression
+:::
+:::
+:::
+
+[paper](http://dx.doi.org/10.1097/MLR.0b013e31819432e5)
+
+## Identify comorbidity from your data
+
+-   Use `icdDxToComorbid` function from `dxpr`
+-   `comorbidMethod` = elix (`ahrq`, `charlson`, and `elix`)
+-   `isDescription` = F
+
+```{r}
+#| echo: true
+Elix <- icdDxToComorbid(dxDataFile = sampleNewborn,
+                        idColName = SUBJECT_ID,
+                        icdColName = ICD9_CODE,
+                        dateColName = ADMITTIME,
+                        icd10usingDate = "9999-10-01",
+                        comorbidMethod = elix,
+                        isDescription = F)
+```
+
+## Warnings from ICD codes analysis - solution
+
+```{r}
+#| echo: true
+head(Elix$Error)
+```
+
+![](figure/7793.png)
+
+[source](http://www.icd9data.com/2014/Volume1/760-779/764-779/779/default.htm)
+
+## Clean your data
+
+Correct the ICD codes by yourself (choosing the right code)
+
+```{r}
+#| echo: true
+sampleNewborn$ICD9_CODE<-
+  ifelse(sampleNewborn$ICD9_CODE=="7793",
+         "77931",sampleNewborn$ICD9_CODE)
+sampleNewborn$ICD9_CODE<-
+  ifelse(sampleNewborn$ICD9_CODE=="V721",
+         "V7219",sampleNewborn$ICD9_CODE)
+```
+
+![](figure/7793.png)
+
+[source](http://www.icd9data.com/2014/Volume1/760-779/764-779/779/default.htm)
+
+## Identify comorbidity - again
+
+```{r}
+#| echo: true
+Elix <- icdDxToComorbid(dxDataFile = sampleNewborn,
+                        idColName = SUBJECT_ID,
+                        icdColName = ICD9_CODE,
+                        dateColName = ADMITTIME,
+                        icd10usingDate = "9999-10-01",
+                        comorbidMethod = Elix,
+                        isDescription = F)
+```
+
+## Check warnings again
+
+```{r}
+#| echo: true
+head(Elix$Error)
+```
+
+## Check warnings - visualization
+
+```{r}
+#| echo: true
+ErrorPlot <- plotICDError(errorFile = Elix$Error,
+                          icdVersion = all,
+                          wrongICDType = all,
+                          others = TRUE,
+                          topN = 10)
+ErrorPlot$graph
+```
+
+## Comorbidity add-on
+
+```{r}
+#| echo: true
+Elix$groupedDT %>% 
+  filter(!is.na(Comorbidity))
+```
+
+## Comorbidity summary
+
+```{r}
+#| echo: true
+Elix$summarised_groupedDT
+```
+
+## Identify comorbidity from your data - CCS (1/2)
+
+```{r}
+#| echo: true
+CCS <- icdDxToCCS(dxDataFile = sampleNewborn,
+                  idColName = SUBJECT_ID,
+                  icdColName = ICD9_CODE,
+                  dateColName = ADMITTIME,
+                  icd10usingDate = "9999-10-01",
+                  isDescription = TRUE)
+```
+
+## Identify comorbidity from your data - CCS (2/2)
+
+```{r}
+#| echo: true
+CCS
+```
+
+# Step 3. Generate Analysis-Ready Data
+
+## Wide format transformation (1/2)
+
+-   Use `groupedDataLongToWide` function from `dxpr`
+-   `categoryColName` = Comorbidity **column name**
+-   `numericOrBinary` = N **Yes or No / Number of diagnoses**
+-   `selectedCaseFile` = Case **column name**
+
+```{r}
+#| echo: true
+Elix_wide <- 
+  groupedDataLongToWide(dxDataFile = Elix$groupedDT,
+                        idColName = ID,
+                        categoryColName = Comorbidity,
+                        dateColName = Date,
+                        numericOrBinary = N,
+                        selectedCaseFile = Case)
+```
+
+## Wide format transformation (2/2)
+
+```{r}
+#| echo: true
+Elix_wide 
+```
+
+# Step 4. Analyze Your Data
+
+## Create the table 1 (1/2)
+
+-   `vars`: variables include in the table
+
+-   `strata`: grouping variable
+
+-   `factorVars`: categorical variables
+
+```{r}
+#| echo: true
+library(tableone)
+var_col <- names(Elix_wide)[2:(length(Elix_wide))]
+table_Elix <- 
+  CreateTableOne(vars = var_col,
+                 strata = "selectedCase",
+                 data = as.data.frame(Elix_wide),
+                 factorVars = var_col)
+```
+## Create the table 1 (1/2)
+
+```{r}
+#| echo: true
+table_Elix
+```
+
+## Create the table 1 - easy to C&P
+
+```{r}
+#| echo: true
+print_table <- print(table_Elix, 
+                     noSpaces = TRUE, 
+                     printToggle = FALSE)
+write.csv(print_table,"table_Elix.csv")
+```
+
+![](figure/tableone.png)
+
+## Create the table 1 - pretty ver. (1/2)
+
+-   `gtsummary` is a good package to generate ready to use analysis results
+
+-   `tbl_summary` function from `gtsummary` can generate the **table 1**
+
+## Create the table 1 - pretty ver. (2/2)
+
+```{r style="font-size: 0.5em"}
+library(gtsummary)
+Elix_wide %>%
+  tbl_summary(by = selectedCase) %>%
+  add_p()
+```
+
+## Visualize table 1
+
+-   `topN` = 10 **n most common group**
+
+-   `limitFreq` = 0.01 **minimum frequency shown**
+
+```{r}
+#| echo: true
+DiagCatPlot<- 
+  plotDiagCat(groupedDataWide = Elix_wide,
+              idColName = ID,
+              groupColName = selectedCase,
+              topN = 10,
+              limitFreq = 0.01)
+DiagCatPlot$graph
+```
+
+## Build models (1/2)
+
+Basic logistic regression model
+
+```{r}
+#| echo: true
+Elix_wide$selectedCase<-
+  factor(Elix_wide$selectedCase,levels=c("non-PDA","PDA"))
+fit <- glm(selectedCase ~ CHF+COAG+HTN+HYPOTHY+LYTES+NEURO+PULMCIRC+VALVE, 
+           Elix_wide, family = binomial)
+summary(fit)$coefficients
+```
+
+## Build models (2/2)
+
+-   `tbl_regression` function from `gtsummary` can generate the OR table for multiple variables regression
+
+```{r style="font-size: 0.5em"}
+#| echo: true
+tbl_regression(fit, exponentiate = TRUE)
+```
+
+## References - I. Code transformation
+
+::: {style="font-size: 0.7em"}
+ICD-9-CM code (2014): https://www.cms.gov/Medicare/Coding/ICD9ProviderDiagnosticCodes/codes.html
+
+ICD-10-CM code (2019-2022):
+
+https://www.cms.gov/Medicare/Coding/ICD10
+
+https://www.findacode.com/search/search.php
+
+https://www.cms.gov/Medicare/Quality-Initiatives-Patient-Assessment-Instruments/HospitalQualityInits/Downloads/HospitalAppendix_F.pdf
+:::
+
+## References - II. Code grouping, CCS
+
+::: {style="font-size: 0.7em"}
+**CCS (Clinical Classifications Software)**
+
+ICD-9-CM (2015):
+
+https://www.hcup-us.ahrq.gov/toolssoftware/ccs/ccs.jsp
+
+https://www.hcup-us.ahrq.gov/toolssoftware/ccs/Multi_Level_CCS_2015.zip
+
+ICD-10-CM (2019):
+
+https://www.hcup-us.ahrq.gov/toolssoftware/ccsr/ccsr_archive.jsp
+
+https://www.hcup-us.ahrq.gov/toolssoftware/ccs10/ccs_dx_icd10cm_2019_1.zip
+:::
+
+## References - II. Code grouping, Comorbidities
+
+::: {style="font-size: 0.7em"}
+ICD-9-AHRQ (2012-2015): https://www.hcup-us.ahrq.gov/toolssoftware/comorbidity/comorbidity.jsp#references
+
+ICD-10-AHRQ (2019): https://www.hcup-us.ahrq.gov/toolssoftware/comorbidityicd10/comformat_icd10cm_2019_1.txt
+
+ICD-9-Charlson: http://mchp-appserv.cpe.umanitoba.ca/Upload/SAS/ICD9_E\_Charlson.sas.txt
+
+ICD-10-Charlson: http://mchp-appserv.cpe.umanitoba.ca/Upload/SAS/ICD10_Charlson.sas.txt
+
+ICD-9-Elixhauser (2012-2015): https://www.hcup-us.ahrq.gov/toolssoftware/comorbidity/comorbidity.jsp#references
+
+ICD-10-Elixhauser (2019): https://www.hcup-us.ahrq.gov/toolssoftware/comorbidityicd10/comformat_icd10cm_2019_1.txt
+:::
+
+## References - II. Code grouping, Others
+
+::: {style="font-size: 0.7em"}
+**CCSR (Clinical Classifications Software Refined)**
+
+ICD-10-CM (v2022-1): https://www.hcup-us.ahrq.gov/toolssoftware/ccsr/ccs_refined.jsp
+
+**PheWAS**
+
+ICD-9-Phecode (version 1.2, 2015): https://phewascatalog.org/phecodes
+
+ICD-10 Phecode (version 1.2 beta, 2019): https://phewascatalog.org/phecodes_icd10cm
+:::
