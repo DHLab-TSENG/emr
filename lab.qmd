@@ -18,11 +18,11 @@ title-slide-attributes:
 
 ## Features
 
--   **Data Mapping** 
+-   **Data Mapping**
     -   Standardize and manipulate data with LOINC
--   **Time Series Analysis** 
+-   **Time Series Analysis**
     -   Separate lab test results into multiple consecutive non-overlapped time windows
--   **Value Imputation** 
+-   **Value Imputation**
     -   Impute value to replace missing data
 -   **Analysis Ready Data Generation**
     -   Transform longitudinal data into wide format
@@ -49,7 +49,9 @@ library(dxpr)
 library(tidyverse)
 library(data.table)
 ```
+
 You need to install packages if you never use these packages
+
 ```{r}
 #| echo: true
 #| eval: false
@@ -224,6 +226,7 @@ knitr::kable(PDAPatients)
 :::
 
 ## Add death info to case list (2/2)
+
 Merge 30-day in-hospital mortality info from **PATIENTS** data
 
 ```{r}
@@ -234,7 +237,6 @@ PDA$DeathDay<-
 PDA$D30<-ifelse(PDA$DeathDay<=30,"Y","N")
 PDA$D30<-ifelse(is.na(PDA$D30),"N",PDA$D30)
 ```
-
 
 ## Take a look of the data from 1 patient
 
@@ -261,6 +263,7 @@ PDAItem95<-
   filter(Perc>0.95)
 head(PDAItem95) # top 6 rows
 ```
+
 ## Laboratory tests selection (2/2)
 
 Select laboratory tests which were given to \>95% of individuals
@@ -270,6 +273,7 @@ Select laboratory tests which were given to \>95% of individuals
 PDALab95<-PDALab %>% filter(ITEMID %in% PDAItem95$ITEMID)
 head(PDALab95) # top 6 rows
 ```
+
 ## LONIC Mapping (1/2)
 
 -   Map laboratory item code (ITEMID) with LOINC.
@@ -287,10 +291,13 @@ PDALabLONIC <- mapLOINC(labData = PDALab95,
                         mappingTable = LONICMap)
 head(PDALabLONIC) # top 6 rows
 ```
+
 ## Normal or Abnormal Test Results (1/6)
 
 -   Reference range information `refLOINC` provided by LONIC
+
     -   The columns have LOINC codes should have the same name with your data
+
 -   The `Patients` table is used to provide gender information
 
     -   reference ranges are different across gender
@@ -301,13 +308,16 @@ head(PDALabLONIC) # top 6 rows
 #| echo: true
 refLOINC
 ```
+
 ## Normal or Abnormal Test Results (3/6)
+
 ```{r}
 #| echo: true
 PDALabLONIC
 ```
 
 ## Normal or Abnormal Test Results (4/6)
+
 ```{r Ab-name}
 #| echo: true
 if(!"LOINC_CODE" %in% colnames(refLOINC)){
@@ -337,10 +347,12 @@ PDALabLONIC_ab <- getAbnormalMark(labData = PDALabLONIC,
 ```
 
 ## Normal or Abnormal Test Results (6/6)
+
 ```{r Ab2}
 #| echo: true
 head(PDALabLONIC_ab)
 ```
+
 # Step 3. Laboratory Data Analysis - time series
 
 ## Width of Windows (1/4)
@@ -355,7 +367,9 @@ PDAIndex
 ```
 
 ## Width of Windows (2/4)
+
 `plotWindowProportion` helps users explore the proportion of missing values in each slicing window.
+
 ```{r window}
 #| echo: true
 windowProportion <- plotWindowProportion(labData = PDALabLONIC,
@@ -372,10 +386,13 @@ windowProportion <- plotWindowProportion(labData = PDALabLONIC,
 
 -   Using 1 or 3 days window may generate large amount of missing records
 -   Could affect the analysis results
+
 ```{r}
 windowProportion$graph
 ```
+
 ## Width of Windows (4/4)
+
 ```{r}
 #| echo: true
 windowProportion$missingData
@@ -415,10 +432,13 @@ timeSeriesPlot <- plotTimeSeriesLab(labData = timeSeriesDataInd,
                                     timeEnd  = 10,
                                     abnormalMarkColName = NULL)
 ```
+
 ## Time-series Visualization (2/2)
+
 ```{r}
 timeSeriesPlot
 ```
+
 ## Analysis Ready Data Generation
 
 ```{r ADR}
@@ -459,6 +479,7 @@ t1<-CreateTableOne(data=PDAandLab %>% filter(Window==1),
 ```
 
 ## The table 1
+
 Some results were different between two groups.
 
 ```{r}
@@ -483,10 +504,13 @@ fullTimeSeriesData <-
                       impMethod = NOCB,
                       imputeOverallMean = FALSE)
 ```
+
 ## Missing Value Imputation (2/2)
+
 ```{r}
 fullTimeSeriesData
 ```
+
 ## Generate analysis ready data
 
 Convert the records into wide format
@@ -506,7 +530,7 @@ head(FullWideTimeSeriesData)
 
 # Step 6. Deep Learning Model Development with Analysis Ready Data
 
-## Training and testing data  (1/2)
+## Training and testing data (1/2)
 
 Window =5
 
@@ -522,6 +546,7 @@ TrainDataFill<-TrainDataFill%>%replace(is.na(.), 0)
 TrainDataFill<-TrainDataFill %>% arrange(Window,ID)
 nPatient<-length(unique(TrainDataFill$ID))
 ```
+
 ## Training and testing data (2/2)
 
 Data and label
@@ -538,10 +563,30 @@ TrainTargetFinal<-
   array(rep(TrainTarget,5),
         dim=c(nPatient,5,1))
 ```
-## Install tensorfolw & some packages
 
--   Install Tensorflow first [Instruction](https://www.tensorflow.org/install)
+## Install python and tensorflow & some packages
+-   Install Python first (3.6 - 3.9) [Instruction](https://www.python.org/downloads/)
+-   Install Tensorflow [Instruction](https://www.tensorflow.org/install)
+
+```
+python3 -m pip install --upgrade pip
+```
+For Macbook M2
+```
+python3 -m pip install tensorflow-macos
+```
+
+
+## Install some packages
 -   You need to install `reticulate`, `keras` and `tensorflow` packages for deep learning model development
+
+```{r keras-install}
+#| echo: true
+#| eval: false
+install.packages("reticulate")
+install.packages("keras")
+install.packages("tensorflow")
+```
 
 ```{r keras}
 #| echo: true
@@ -581,6 +626,7 @@ fit<-model %>% fit(
   shuffle = FALSE
 )
 ```
+
 ## Model development (3/3)
 
 ```{r LSTM3}

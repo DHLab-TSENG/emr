@@ -15,6 +15,7 @@ title-slide-attributes:
   data-background-size: 15%
   data-background-position: 2% 2%
 ---
+
 ## Before we start....
 
 <https://github.com/DHLab-TSENG/emr>
@@ -92,7 +93,11 @@ install.packages("tidyverse")
 install.packages("remotes")
 remotes::install_github("DHLab-TSENG/dxpr")
 remotes::install_github("DHLab-TSENG/lab")
+install.packages("tableone")
+install.packages("gtsummary")
 ```
+
+![](figure/dxpr-install.png)
 
 # EMR
 
@@ -142,5 +147,3 @@ Other information:
 
 -   Image
 -   Signal
-
-

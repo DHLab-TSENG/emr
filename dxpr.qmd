@@ -402,6 +402,7 @@ table_Elix <-
                  data = as.data.frame(Elix_wide),
                  factorVars = var_col)
 ```
+
 ## Create the table 1 (1/2)
 
 ```{r}

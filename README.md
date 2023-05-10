@@ -7,6 +7,8 @@ install.packages("tidyverse")
 install.packages("remotes")
 remotes::install_github("DHLab-TSENG/dxpr")
 remotes::install_github("DHLab-TSENG/lab")
+install.packages("tableone")
+install.packages("gtsummary")
 ```
 
 ## Contents

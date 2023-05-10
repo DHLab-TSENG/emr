@@ -5594,7 +5594,7 @@ $ DOD_HOSP   &lt;dttm&gt; NA, NA, NA, NA, NA, NA, NA, 2159-01-04, NA, NA, …</c
 <li>Could affect the analysis results</li>
 </ul>
 
-<img data-src="lab_files/figure-revealjs/unnamed-chunk-32-1.png" width="960" class="r-stretch"></section>
+<img data-src="lab_files/figure-revealjs/unnamed-chunk-16-1.png" width="960" class="r-stretch"></section>
 <section id="width-of-windows-44" class="slide level2">
 <h2>Width of Windows (4/4)</h2>
 <div class="cell">
@@ -5667,7 +5667,7 @@ $ DOD_HOSP   &lt;dttm&gt; NA, NA, NA, NA, NA, NA, NA, 2159-01-04, NA, NA, …</c
 <section id="time-series-visualization-22" class="slide level2">
 <h2>Time-series Visualization (2/2)</h2>
 
-<img data-src="lab_files/figure-revealjs/unnamed-chunk-36-1.png" width="960" class="r-stretch"></section>
+<img data-src="lab_files/figure-revealjs/unnamed-chunk-18-1.png" width="960" class="r-stretch"></section>
 <section id="analysis-ready-data-generation" class="slide level2">
 <h2>Analysis Ready Data Generation</h2>
 <div class="cell">
@@ -5931,52 +5931,66 @@ $ DOD_HOSP   &lt;dttm&gt; NA, NA, NA, NA, NA, NA, NA, 2159-01-04, NA, NA, …</c
 <span id="cb52-9"><a href="#cb52-9"></a>        <span class="at">dim=</span><span class="fu">c</span>(nPatient,<span class="dv">5</span>,<span class="dv">1</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
-<section id="install-tensorfolw-some-packages" class="slide level2">
-<h2>Install tensorfolw &amp; some packages</h2>
+<section id="install-python-and-tensorflow-some-packages" class="slide level2">
+<h2>Install python and tensorflow &amp; some packages</h2>
 <ul>
-<li>Install Tensorflow first <a href="https://www.tensorflow.org/install">Instruction</a></li>
+<li>Install Python first (3.6 - 3.9) <a href="https://www.python.org/downloads/">Instruction</a></li>
+<li>Install Tensorflow <a href="https://www.tensorflow.org/install">Instruction</a></li>
+</ul>
+<pre><code>python3 -m pip install --upgrade pip</code></pre>
+<p>For Macbook M2</p>
+<pre><code>python3 -m pip install tensorflow-macos</code></pre>
+</section>
+<section id="install-some-packages" class="slide level2">
+<h2>Install some packages</h2>
+<ul>
 <li>You need to install <code>reticulate</code>, <code>keras</code> and <code>tensorflow</code> packages for deep learning model development</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1"></a><span class="fu">library</span>(reticulate)</span>
-<span id="cb53-2"><a href="#cb53-2"></a><span class="fu">library</span>(keras)</span>
-<span id="cb53-3"><a href="#cb53-3"></a><span class="fu">library</span>(tensorflow)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1"></a><span class="fu">install.packages</span>(<span class="st">"reticulate"</span>)</span>
+<span id="cb55-2"><a href="#cb55-2"></a><span class="fu">install.packages</span>(<span class="st">"keras"</span>)</span>
+<span id="cb55-3"><a href="#cb55-3"></a><span class="fu">install.packages</span>(<span class="st">"tensorflow"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1"></a><span class="fu">library</span>(reticulate)</span>
+<span id="cb56-2"><a href="#cb56-2"></a><span class="fu">library</span>(keras)</span>
+<span id="cb56-3"><a href="#cb56-3"></a><span class="fu">library</span>(tensorflow)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="model-development-13" class="slide level2">
 <h2>Model development (1/3)</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1"></a>model <span class="ot">&lt;-</span> <span class="fu">keras_model_sequential</span>()</span>
-<span id="cb54-2"><a href="#cb54-2"></a>model <span class="sc">%&gt;%</span> <span class="fu">layer_lstm</span>(<span class="dv">16</span>, </span>
-<span id="cb54-3"><a href="#cb54-3"></a>                     <span class="at">batch_input_shape =</span> <span class="fu">c</span>(<span class="dv">126</span>, <span class="dv">5</span>, <span class="fu">ncol</span>(pureTrain)),</span>
-<span id="cb54-4"><a href="#cb54-4"></a>                     <span class="at">return_sequences =</span><span class="cn">TRUE</span>, <span class="at">stateful=</span> <span class="cn">TRUE</span>,</span>
-<span id="cb54-5"><a href="#cb54-5"></a>                     <span class="at">kernel_regularizer =</span> <span class="fu">regularizer_l2</span>(<span class="fl">0.001</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb54-6"><a href="#cb54-6"></a>  <span class="fu">layer_dropout</span>(<span class="at">rate=</span><span class="dv">0</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb54-7"><a href="#cb54-7"></a>  <span class="fu">layer_dense</span>(<span class="dv">16</span>,<span class="at">activation =</span> <span class="st">'relu'</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb54-8"><a href="#cb54-8"></a>  <span class="fu">layer_dense</span>(<span class="dv">1</span>,<span class="at">activation =</span> <span class="st">'sigmoid'</span>)</span>
-<span id="cb54-9"><a href="#cb54-9"></a>model <span class="sc">%&gt;%</span> <span class="fu">compile</span>(</span>
-<span id="cb54-10"><a href="#cb54-10"></a>  <span class="at">loss =</span> <span class="st">'binary_crossentropy'</span>,</span>
-<span id="cb54-11"><a href="#cb54-11"></a>  <span class="at">optimizer =</span> <span class="st">'adam'</span>,</span>
-<span id="cb54-12"><a href="#cb54-12"></a>  <span class="at">metrics=</span> tensorflow<span class="sc">::</span>tf<span class="sc">$</span>keras<span class="sc">$</span>metrics<span class="sc">$</span><span class="fu">AUC</span>())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb57"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1"></a>model <span class="ot">&lt;-</span> <span class="fu">keras_model_sequential</span>()</span>
+<span id="cb57-2"><a href="#cb57-2"></a>model <span class="sc">%&gt;%</span> <span class="fu">layer_lstm</span>(<span class="dv">16</span>, </span>
+<span id="cb57-3"><a href="#cb57-3"></a>                     <span class="at">batch_input_shape =</span> <span class="fu">c</span>(<span class="dv">126</span>, <span class="dv">5</span>, <span class="fu">ncol</span>(pureTrain)),</span>
+<span id="cb57-4"><a href="#cb57-4"></a>                     <span class="at">return_sequences =</span><span class="cn">TRUE</span>, <span class="at">stateful=</span> <span class="cn">TRUE</span>,</span>
+<span id="cb57-5"><a href="#cb57-5"></a>                     <span class="at">kernel_regularizer =</span> <span class="fu">regularizer_l2</span>(<span class="fl">0.001</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb57-6"><a href="#cb57-6"></a>  <span class="fu">layer_dropout</span>(<span class="at">rate=</span><span class="dv">0</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb57-7"><a href="#cb57-7"></a>  <span class="fu">layer_dense</span>(<span class="dv">16</span>,<span class="at">activation =</span> <span class="st">'relu'</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb57-8"><a href="#cb57-8"></a>  <span class="fu">layer_dense</span>(<span class="dv">1</span>,<span class="at">activation =</span> <span class="st">'sigmoid'</span>)</span>
+<span id="cb57-9"><a href="#cb57-9"></a>model <span class="sc">%&gt;%</span> <span class="fu">compile</span>(</span>
+<span id="cb57-10"><a href="#cb57-10"></a>  <span class="at">loss =</span> <span class="st">'binary_crossentropy'</span>,</span>
+<span id="cb57-11"><a href="#cb57-11"></a>  <span class="at">optimizer =</span> <span class="st">'adam'</span>,</span>
+<span id="cb57-12"><a href="#cb57-12"></a>  <span class="at">metrics=</span> tensorflow<span class="sc">::</span>tf<span class="sc">$</span>keras<span class="sc">$</span>metrics<span class="sc">$</span><span class="fu">AUC</span>())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="model-development-23" class="slide level2">
 <h2>Model development (2/3)</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1"></a>fit<span class="ot">&lt;-</span>model <span class="sc">%&gt;%</span> <span class="fu">fit</span>(</span>
-<span id="cb55-2"><a href="#cb55-2"></a>  <span class="at">x =</span> TrainArray,</span>
-<span id="cb55-3"><a href="#cb55-3"></a>  <span class="at">y =</span> TrainTargetFinal,</span>
-<span id="cb55-4"><a href="#cb55-4"></a>  <span class="at">batch_size =</span> <span class="dv">126</span>,</span>
-<span id="cb55-5"><a href="#cb55-5"></a>  <span class="at">epoch=</span> <span class="dv">100</span> ,</span>
-<span id="cb55-6"><a href="#cb55-6"></a>  <span class="at">verbose =</span> <span class="dv">1</span>,</span>
-<span id="cb55-7"><a href="#cb55-7"></a>  <span class="at">shuffle =</span> <span class="cn">FALSE</span></span>
-<span id="cb55-8"><a href="#cb55-8"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1"></a>fit<span class="ot">&lt;-</span>model <span class="sc">%&gt;%</span> <span class="fu">fit</span>(</span>
+<span id="cb58-2"><a href="#cb58-2"></a>  <span class="at">x =</span> TrainArray,</span>
+<span id="cb58-3"><a href="#cb58-3"></a>  <span class="at">y =</span> TrainTargetFinal,</span>
+<span id="cb58-4"><a href="#cb58-4"></a>  <span class="at">batch_size =</span> <span class="dv">126</span>,</span>
+<span id="cb58-5"><a href="#cb58-5"></a>  <span class="at">epoch=</span> <span class="dv">100</span> ,</span>
+<span id="cb58-6"><a href="#cb58-6"></a>  <span class="at">verbose =</span> <span class="dv">1</span>,</span>
+<span id="cb58-7"><a href="#cb58-7"></a>  <span class="at">shuffle =</span> <span class="cn">FALSE</span></span>
+<span id="cb58-8"><a href="#cb58-8"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="model-development-33" class="slide level2">
 <h2>Model development (3/3)</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1"></a><span class="fu">plot</span>(fit)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1"></a><span class="fu">plot</span>(fit)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <p><img data-src="lab_files/figure-revealjs/LSTM3-1.png" width="960"></p>
 </div>
