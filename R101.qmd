@@ -28,6 +28,9 @@ title-slide-attributes:
 ![](figure/download.png){width="400"}
 :::
 :::
+
+Unzip, double click "emr.Rproj"
+
 # From pre-tutorial survey
 
 ## About programming, R, EMR
