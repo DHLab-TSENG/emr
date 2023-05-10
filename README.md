@@ -11,5 +11,5 @@ remotes::install_github("DHLab-TSENG/lab")
 
 ## Contents
 - [101](R101.qmd)
-- [dxpr](dxpr-note.rmd)
-- [lab](lab-note.rmd)
+- [dxpr](dxpr-note.Rmd)
+- [lab](lab-note.Rmd)
