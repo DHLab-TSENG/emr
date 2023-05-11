@@ -10,8 +10,12 @@ remotes::install_github("DHLab-TSENG/lab")
 install.packages("tableone")
 install.packages("gtsummary")
 ```
+## Slides
+- [Intro](https://dhlab-tseng.github.io/emr/R101.html)
+- [dxpr](https://dhlab-tseng.github.io/emr/dxpr.html)
+- [lab](https://dhlab-tseng.github.io/emr/lab.html)
 
-## Contents
-- [101](R101.qmd)
+## Notebook
+- [Intro](R101.qmd)
 - [dxpr](dxpr-note.Rmd)
 - [lab](lab-note.Rmd)
